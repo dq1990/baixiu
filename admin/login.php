@@ -56,7 +56,7 @@ function login () {
   $_SESSION['current_login_user'] = $user;
 
   // 一切OK 可以跳转
-  header('Location: /admin/');
+  header('Location: '.$_POST['reurl']);
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -78,6 +78,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <!-- 可以通过在 form 上添加 novalidate 取消浏览器自带的校验功能 -->
     <!-- autocomplete="off" 关闭客户端的自动完成功能 -->
     <form class="login-wrap<?php echo isset($message) ? ' shake animated' : '' ?>" action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post" autocomplete="off" novalidate>
+      
+      <input type="text" name="reurl" value="<?php echo isset($_GET['reurl'])?urldecode($_GET['reurl']):'/admin/index.php';?>" hidden>
+
       <img class="avatar" src="/static/assets/img/default.png">
       <!-- 作为一个优秀的页面开发人员，必须考虑一个页面的不同状态下展示的内容不一样的情况 -->
       <!-- 有错误信息时展示 -->

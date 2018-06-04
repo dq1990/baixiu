@@ -1,3 +1,4 @@
+<?php require_once 'inc/check_login.php';?>
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
