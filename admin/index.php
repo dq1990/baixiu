@@ -1,4 +1,20 @@
-<?php require_once 'inc/check_login.php';?>
+<!-- 也可以使用 $_SERVER['PHP_SELF'] 取代 $current_page -->
+<?php
+require_once '../functions.php';   //上下两种都可以
+require_once '../config.php';
+$current_page = isset($current_page) ? $current_page : '';
+// 判断用户是否登录一定是最先去做
+// xiu_get_current_user();
+
+// 获取界面所需要的数据
+// 重复的操作一定封装起来
+$posts_count = xiu_fetch_one('select count(1) as num from posts;')['num'];
+
+$categories_count = xiu_fetch_one('select count(1) as num from categories;')['num'];
+
+$comments_count = xiu_fetch_one('select count(1) as num from comments;')['num'];
+
+?>
 
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -30,9 +46,9 @@
               <h3 class="panel-title">站点内容统计：</h3>
             </div>
             <ul class="list-group">
-              <li class="list-group-item"><strong>10</strong>篇文章（<strong>2</strong>篇草稿）</li>
-              <li class="list-group-item"><strong>6</strong>个分类</li>
-              <li class="list-group-item"><strong>5</strong>条评论（<strong>1</strong>条待审核）</li>
+              <li class="list-group-item"><strong><?php echo $posts_count; ?></strong>篇文章（<strong>2</strong>篇草稿）</li>
+              <li class="list-group-item"><strong><?php echo $categories_count; ?></strong>个分类</li>
+              <li class="list-group-item"><strong><?php echo $comments_count; ?></strong>条评论（<strong>1</strong>条待审核）</li>
             </ul>
           </div>
         </div>
