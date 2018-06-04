@@ -37,7 +37,7 @@ $comments_count = xiu_fetch_one('select count(1) as num from comments;')['num'];
       <div class="jumbotron text-center">
         <h1>One Belt, One Road</h1>
         <p>Thoughts, stories and ideas.</p>
-        <p><a class="btn btn-primary btn-lg" href="post-add.html" role="button">写文章</a></p>
+        <p><a class="btn btn-primary btn-lg" href="/admin/post-add.php" role="button">写文章</a></p>
       </div>
       <div class="row">
         <div class="col-md-4">
@@ -52,7 +52,9 @@ $comments_count = xiu_fetch_one('select count(1) as num from comments;')['num'];
             </ul>
           </div>
         </div>
-        <div class="col-md-4"></div>
+        <div class="col-md-4">
+          <canvas id="chart"></canvas>
+        </div>
         <div class="col-md-4"></div>
       </div>
     </div>
@@ -63,6 +65,40 @@ $comments_count = xiu_fetch_one('select count(1) as num from comments;')['num'];
 
   <script src="/static/assets/vendors/jquery/jquery.js"></script>
   <script src="/static/assets/vendors/bootstrap/js/bootstrap.js"></script>
+  <script src="/static/assets/vendors/chart/Chart.js"></script>
+  <script>
+    var ctx = document.getElementById('chart').getContext('2d');
+    var myChart = new Chart(ctx, {
+      type: 'pie',
+      data: {
+        datasets: [
+          {
+            data: [<?php echo $posts_count; ?>, <?php echo $categories_count; ?>, <?php echo $comments_count; ?>],
+            backgroundColor: [
+              'hotpink',
+              'pink',
+              'deeppink',
+            ]
+          },
+          {
+            data: [<?php echo $posts_count; ?>, <?php echo $categories_count; ?>, <?php echo $comments_count; ?>],
+            backgroundColor: [
+              'hotpink',
+              'pink',
+              'deeppink',
+            ]
+          }
+        ],
+
+        // These labels appear in the legend and in the tooltips when hovering different arcs
+        labels: [
+          '文章',
+          '分类',
+          '评论'
+        ]
+      }
+    });
+  </script>
   <script>NProgress.done()</script>
 </body>
 </html>
