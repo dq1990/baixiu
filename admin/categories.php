@@ -191,5 +191,69 @@ $categories = xiu_fetch_all('select * from categories;');
   <script src="/static/assets/vendors/jquery/jquery.js"></script>
   <script src="/static/assets/vendors/bootstrap/js/bootstrap.js"></script>
   <script>NProgress.done()</script>
+  <script>
+    $(function($){
+      var $tbodyCheckboxs = $('tbody input');
+      var $theadCheckbox = $('thead input');
+      var $btnDelete = $('#btn_delete');
+
+
+
+      // 定义一个数组记录被选中的
+      var allCheckeds = []
+      $tbodyCheckboxs.on('change',function(){
+        var id = $(this).attr('data-id');
+
+        if($(this).prop('checked')){
+          allCheckeds.push(id);
+        }else{
+          allCheckeds.splice(allCheckeds.indexOf(id),1);
+        }
+
+        allCheckeds.length?$btnDelete.fadeIn() : $btnDelete.fadeOut();
+        allCheckeds.length==$tbodyCheckboxs.length?$theadCheckbox.prop('checked',true):$theadCheckbox.prop('checked',false);
+        // attr 和 prop 区别：
+        // - attr 访问的是 元素属性(页面标签上可见的属性？)
+        // - prop 访问的是 元素对应的DOM对象的属性(对象的属性)
+
+        //$btnDelete.attr('href', '/admin/category-delete.php?id=' + allCheckeds);
+        //$btnDelete.prop('href', '/admin/category-delete.php?id=' + allCheckeds);
+        //首先将a标签中设置href="/admin/category-delete.php"
+        $btnDelete.prop('search', '?id=' + allCheckeds)
+      });
+
+
+
+
+      //prop不能批量设置
+      //下面无效
+      //$theadCheckbox.prop('checked')?$tbodyCheckboxs.prop('checked',true):$tbodyCheckboxs.prop('checked',false);
+      $theadCheckbox.on('change',function(){
+        var flag = $(this).prop('checked');
+        $tbodyCheckboxs.each(function(){
+          $(this).prop('checked',flag);
+        });
+      })
+      
+
+      // ## version 1 =================================
+      // $tbodyCheckboxs.on('change', function () {
+      //   // 有任意一个 checkbox 选中就显示，反之隐藏
+      //   var flag = false
+      //   $tbodyCheckboxs.each(function (i, item) {
+      //     // attr 和 prop 区别：
+      //     // - attr 访问的是 元素属性
+      //     // - prop 访问的是 元素对应的DOM对象的属性
+      //     // console.log($(item).prop('checked'))
+      //     if ($(item).prop('checked')) {
+      //       flag = true
+      //     }
+      //   })
+      //这种方式速度慢 效率差些  因为进行了DOM操作的循环  DOM操作时比较耗时的
+
+      //   flag ? $btnDelete.fadeIn() : $btnDelete.fadeOut()
+      // })
+    });
+  </script>
 </body>
 </html>

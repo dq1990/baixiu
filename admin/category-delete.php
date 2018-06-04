@@ -15,7 +15,8 @@ $id = $_GET['id'];
 // => '1 or 1 = 1'
 // sql 注入
 // 1,2,3,4
-
+// id=1 or 1 = 1 防止SQL注入
+//is_numeric(var)  不是数字就提示信息
 $rows = xiu_execute('delete from categories where id in (' . $id . ');');
 
 // if ($rows > 0) {}
