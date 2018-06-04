@@ -1,7 +1,6 @@
 <!-- 也可以使用 $_SERVER['PHP_SELF'] 取代 $current_page -->
 <?php 
 // $current_page = isset($current_page) ? $current_page : '';
-require_once '../config.php';
 require_once '../functions.php';   //上下两种都可以
 
 // 判断用户是否登录一定是最先去做
