@@ -72,6 +72,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <link rel="stylesheet" href="/static/assets/vendors/bootstrap/css/bootstrap.css">
   <link rel="stylesheet" href="/static/assets/vendors/animate/animate.css">
   <link rel="stylesheet" href="/static/assets/css/admin.css">
+
+  <link rel="stylesheet" href="/static/assets/vendors/nprogress/nprogress.css">
+  <script src="/static/assets/vendors/nprogress/nprogress.js" ></script>
 </head>
 <body>
   <div class="login">
@@ -100,5 +103,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <button class="btn btn-primary btn-block">登 录</button>
     </form>
   </div>
+
+  <script src="/static/assets/vendors/jquery/jquery.js"></script>
+  <script type="text/javascript">
+    var emailFormat = /^[A-Za-z0-9\u4e00-\u9fa5]+@[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)+$/;
+    $(function($){
+      $('#email').on('blur',function(){
+        var value = $(this).val();
+
+        if( !value || !emailFormat.test(value) ) return;
+        
+        $.get('/admin/api/avatar.php',{email:value},function(res){
+          // 展示到上面的 img 元素上
+          // 下行代码效果不行  默认图还没fadeOut就设置了新图，后fadeOut，新图再fadeIn
+          // $('.avatar').fadeOut().attr('src', res).fadeIn()
+
+          $('.avatar').fadeOut(function () {
+            // 等到 淡出完成
+            $(this).on('load', function () {
+              // 图片完全加载成功过后
+              $(this).fadeIn()
+            }).attr('src', res)
+          })
+          
+        });
+      });
+    });
+  </script>
 </body>
 </html>
