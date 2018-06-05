@@ -1,7 +1,9 @@
-<?php 
+<?php
+
 require_once '../functions.php';
 
 xiu_get_current_user();
+
 ?>
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -28,7 +30,7 @@ xiu_get_current_user();
       <!-- <div class="alert alert-danger">
         <strong>错误！</strong>发生XXX错误
       </div> -->
-      <form class="row">
+      <form class="row" action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post">
         <div class="col-md-9">
           <div class="form-group">
             <label for="title">标题</label>
@@ -36,7 +38,8 @@ xiu_get_current_user();
           </div>
           <div class="form-group">
             <label for="content">标题</label>
-            <textarea id="content" class="form-control input-lg" name="content" cols="30" rows="10" placeholder="内容"></textarea>
+            <!-- <textarea id="content" class="form-control input-lg" name="content" cols="30" rows="10" placeholder="内容"></textarea> -->
+            <script id="content" name="content" type="text/plain">这是初始值</script>
           </div>
         </div>
         <div class="col-md-3">
@@ -82,6 +85,14 @@ xiu_get_current_user();
 
   <script src="/static/assets/vendors/jquery/jquery.js"></script>
   <script src="/static/assets/vendors/bootstrap/js/bootstrap.js"></script>
+  <script src="/static/assets/vendors/ueditor/ueditor.config.js"></script>
+  <script src="/static/assets/vendors/ueditor/ueditor.all.js"></script>
+  <script>
+    UE.getEditor('content', {
+      initialFrameHeight: 320,
+      autoHeight: false
+    })
+  </script>
   <script>NProgress.done()</script>
 </body>
 </html>
