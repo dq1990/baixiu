@@ -205,13 +205,16 @@ $categories = xiu_fetch_all('select * from categories;');
         var id = $(this).attr('data-id');
 
         if($(this).prop('checked')){
-          allCheckeds.push(id);
+          allCheckeds.indexOf(id) != -1 || allCheckeds.push(id);
+          //!allCheckeds.includes(id) || allCheckeds.push(id)
         }else{
           allCheckeds.splice(allCheckeds.indexOf(id),1);
         }
 
         allCheckeds.length?$btnDelete.fadeIn() : $btnDelete.fadeOut();
         allCheckeds.length==$tbodyCheckboxs.length?$theadCheckbox.prop('checked',true):$theadCheckbox.prop('checked',false);
+
+
         // attr 和 prop 区别：
         // - attr 访问的是 元素属性(页面标签上可见的属性？)
         // - prop 访问的是 元素对应的DOM对象的属性(对象的属性)
@@ -226,14 +229,16 @@ $categories = xiu_fetch_all('select * from categories;');
 
 
       //prop不能批量设置
-      //下面无效
+      //下面无效  没有设置change事件
       //$theadCheckbox.prop('checked')?$tbodyCheckboxs.prop('checked',true):$tbodyCheckboxs.prop('checked',false);
+      // 全选和全不选
       $theadCheckbox.on('change',function(){
         var flag = $(this).prop('checked');
-        $tbodyCheckboxs.each(function(){
-          $(this).prop('checked',flag);
-        });
+
+        $tbodyCheckboxs.prop('checked',flag).trigger('change');
       })
+
+
       
 
       // ## version 1 =================================

@@ -1,4 +1,8 @@
-<?php require_once 'inc/check_login.php';?>
+<?php 
+require_once '../functions.php';
+
+xiu_get_current_user();
+?>
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
