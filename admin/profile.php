@@ -35,6 +35,10 @@ xiu_get_current_user();
             <label class="form-image">
               <input id="avatar" type="file">
               <img src="/static/assets/img/default.png">
+
+              <!-- 异步上传文件 时 存储文件路径-->
+              <input type="text" name="avatar" hidden>
+
               <i class="mask fa fa-upload"></i>
             </label>
           </div>
@@ -82,5 +86,33 @@ xiu_get_current_user();
   <script src="/static/assets/vendors/jquery/jquery.js"></script>
   <script src="/static/assets/vendors/bootstrap/js/bootstrap.js"></script>
   <script>NProgress.done()</script>
+  
+  <script>
+    $("#avatar").on('change',function(){
+
+      //当前文件选择状态变化会执行这个事件处理函数
+      //判断是否选中了文件
+      var files =  $(this).prop('files');
+      if(!files.length) return;
+      //拿到我们要上传的文件
+      var file = files[0];
+      
+      //FormData 是 HTML5 中新增的一个成员，专门配合AJAX 操作 用于在用户端与服务端之间传递二进制数据
+      //文件要传递的话 必须要用二进制进行传递
+      var data = new FormData();
+      data.append('avatar',file);
+
+      var xhr = window.XMLHttpRequest?new XMLHttpRequest():new ActiveXObject('Microsoft.XMLHTTP');
+      xhr.open('post','/admin/api/upload.php');
+      xhr.send(data);
+
+      xhr.onload=function(){
+       console.log(this.responseText);
+       $(this).siblings('img').attr('src',this.responseText);
+       $('input[name=input]').val(this.responseText);
+      }
+
+    })
+  </script>
 </body>
 </html>

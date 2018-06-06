@@ -41,6 +41,8 @@ xiu_get_current_user();
         <li<?php echo $current_page === 'nav-menus' ? ' class="active"' : '' ?>><a href="/admin/nav-menus.php">导航菜单</a></li>
         <li<?php echo $current_page === 'slides' ? ' class="active"' : '' ?>><a href="/admin/slides.php">图片轮播</a></li>
         <li<?php echo $current_page === 'settings' ? ' class="active"' : '' ?>><a href="/admin/settings.php">网站设置</a></li>
+        <li<?php echo $current_page === 'profile' ? ' class="active"' : '' ?>><a href="/admin/profile.php">个人资料</a></li>
+        
       </ul>
     </li>
   </ul>

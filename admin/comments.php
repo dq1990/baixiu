@@ -202,7 +202,7 @@ xiu_get_current_user();
       }
       loadData(currentPage,1);
 
-      var $btnBatch = $('.btn-batch');
+      
 
       //删除评论
       //动态添加，为了能获取事件执行对象 使用委托事件
@@ -214,6 +214,55 @@ xiu_get_current_user();
           res.success && loadData(currentPage)
         })
       });
+
+      // 修改评论状态
+      $tbody.on('click', '.btn-edit', function () {
+        var id = parseInt($(this).parent().parent().data('id'))
+        var status = $(this).data('status')
+        $.post('/admin/api/comment-status.php?id=' + id, { status: status }, function (res) {
+          res.success && loadData(currentPage)
+        })
+      })
+
+      var $btnBatch = $('.btn-batch');
+
+      // 批量操作按钮
+      $tbody.on('change', 'td > input[type=checkbox]', function () {
+        var id = parseInt($(this).parent().parent().data('id'))
+        if ($(this).prop('checked')) {
+          checkedItems.push(id)
+        } else {
+          checkedItems.splice(checkedItems.indexOf(id), 1)
+        }
+        checkedItems.length ? $btnBatch.fadeIn() : $btnBatch.fadeOut()
+      })
+
+      // 全选 / 全不选
+      $('th > input[type=checkbox]').on('change', function () {
+        var checked = $(this).prop('checked')
+        $('td > input[type=checkbox]').prop('checked', checked).trigger('change')
+      })
+
+      // 批量操作
+      $btnBatch
+        // 批准
+        .on('click', '.btn-info', function () {
+          $.post('/admin/api/comment-status.php?id=' + checkedItems.join(','), { status: 'approved' }, function (res) {
+            res.success && loadData(currentPage)
+          })
+        })
+        // 拒绝
+        .on('click', '.btn-warning', function () {
+          $.post('/admin/api/comment-status.php?id=' + checkedItems.join(','), { status: 'rejected' }, function (res) {
+            res.success && loadData(currentPage)
+          })
+        })
+        // 删除
+        .on('click', '.btn-danger', function () {
+          $.get('/admin/api/comment-delete.php', { id: checkedItems.join(',') }, function (res) {
+            res.success && loadData(currentPage)
+          })
+        })
 
     });
   </script>
