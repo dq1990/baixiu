@@ -1,125 +1,127 @@
 <?php
+/**
+ * 文章管理
+ */
 
-require_once '../functions.php';
+// 载入脚本
+// ========================================
 
+require '../functions.php';
+
+// 访问控制
+// ========================================
+
+// 获取登录用户信息
 xiu_get_current_user();
 
-// 接收筛选参数
-// ==================================
+// 处理筛选逻辑
+// ========================================
 
+// 数据库查询筛选条件（默认为 1 = 1，相当于没有条件）
 $where = '1 = 1';
-$search = '';
+
+// 记录本次请求的查询参数
+$query = '';
+
+// 状态筛选
+if (isset($_GET['s']) && $_GET['s'] != 'all') {
+  $where .= sprintf(" and posts.status = '%s'", $_GET['s']);
+  $query .= '&s=' . $_GET['s'];
+}
 
 // 分类筛选
-if (isset($_GET['category']) && $_GET['category'] !== 'all') {
-  $where .= ' and posts.category_id = ' . $_GET['category'];
-  $search .= '&category=' . $_GET['category'];
+if (isset($_GET['c']) && $_GET['c'] != 'all') {
+  $where .= sprintf(" and posts.category_id = %d", $_GET['c']);
+  $query .= '&c=' . $_GET['c'];
 }
 
-if (isset($_GET['status']) && $_GET['status'] !== 'all') {
-  $where .= " and posts.status = '{$_GET['status']}'";
-  $search .= '&status=' . $_GET['status'];
-}
+// 处理分页
+// ========================================
 
-// $where => "1 = 1 and posts.category_id = 1 and posts.status = 'published'"
-// $search => "&category=1&status=published"
-
-// 处理分页参数
-// =========================================
-
+// 定义每页显示数据量（一般把这一项定义到配置文件中）
 $size = 10;
-$page = empty($_GET['page']) ? 1 : (int)$_GET['page'];
-// 必须 >= 1 && <= 总页数
 
-// $page = $page < 1 ? 1 : $page;
-if ($page < 1) {
-  // 跳转到第一页
-  header('Location: /admin/posts.php?page=1' . $search);
+// 获取分页参数 没有或传过来的不是数字的话默认为 1
+$page = isset($_GET['p']) && is_numeric($_GET['p']) ? intval($_GET['p']) : 1;
+
+if ($page <= 0) {
+  // 页码小于 1 没有任何意义，则跳转到第一页
+  header('Location: /admin/posts.php?p=1' . $query);
+  exit;
 }
 
-// 只要是处理分页功能一定会用到最大的页码数
-$total_count = (int)xiu_fetch_one("select count(1) as count from posts
-inner join categories on posts.category_id = categories.id
+// 查询总条数
+$total_count = intval(xiu_query('select count(1)
+from posts
 inner join users on posts.user_id = users.id
-where {$where};")['count'];
-$total_pages = (int)ceil($total_count / $size);
+inner join categories on posts.category_id = categories.id
+where ' . $where)[0][0]);
 
-// $page = $page > $total_pages ? $total_pages : $page;
+// 计算总页数
+$total_pages = ceil($total_count / $size);
+
 if ($page > $total_pages) {
-  // 跳转到第最后页
-  header('Location: /admin/posts.php?page=' . $total_pages . $search);
+  // 超出范围，则跳转到最后一页
+  header('Location: /admin/posts.php?p=' . $total_pages . $query);
+  exit;
 }
 
-// 获取全部数据
-// ===================================
+// 查询数据
+// ========================================
 
-// 计算出越过多少条
-$offset = ($page - 1) * $size;
-
-$posts = xiu_fetch_all("select
+// 查询文章数据
+$posts = xiu_query(sprintf('select
   posts.id,
   posts.title,
-  users.nickname as user_name,
-  categories.name as category_name,
   posts.created,
-  posts.status
+  posts.status,
+  categories.name as category_name,
+  users.nickname as author_name
 from posts
-inner join categories on posts.category_id = categories.id
 inner join users on posts.user_id = users.id
-where {$where}
+inner join categories on posts.category_id = categories.id
+where %s
 order by posts.created desc
-limit {$offset}, {$size};");
+limit %d, %d', $where, ($page - 1) * $size, $size));
 
+// 查询全部分类数据
+$categories = xiu_query('select * from categories');
 
-
-// 查询全部的分类数据
-$categories = xiu_fetch_all('select * from categories;');
-
-// 处理分页页码
-// ===============================
-
-$visiables = 5;
-
-// 计算最大和最小展示的页码
-$begin = $page - ($visiables - 1) / 2;
-$end = $begin + $visiables - 1;
-
-// 重点考虑合理性的问题
-// begin > 0  end <= total_pages
-$begin = $begin < 1 ? 1 : $begin; // 确保了 begin 不会小于 1
-$end = $begin + $visiables - 1; // 因为 50 行可能导致 begin 变化，这里同步两者关系
-$end = $end > $total_pages ? $total_pages : $end; // 确保了 end 不会大于 total_pages
-$begin = $end - $visiables + 1; // 因为 52 可能改变了 end，也就有可能打破 begin 和 end 的关系
-$begin = $begin < 1 ? 1 : $begin; // 确保不能小于 1
-
-// 处理数据格式转换
-// ===========================================
+// 数据过滤函数
+// ========================================
 
 /**
- * 转换状态显示
+ * 将英文状态描述转换为中文
  * @param  string $status 英文状态
  * @return string         中文状态
  */
 function convert_status ($status) {
-  $dict = array(
-    'published' => '已发布',
-    'drafted' => '草稿',
-    'trashed' => '回收站'
-  );
-  return isset($dict[$status]) ? $dict[$status] : '未知';
+  switch ($status) {
+    case 'drafted':
+      return '草稿';
+    case 'published':
+      return '已发布';
+    case 'trashed':
+      return '回收站';
+    default:
+      return '未知';
+  }
 }
 
 /**
- * 转换时间格式
- * @param  [type] $created [description]
- * @return [type]          [description]
+ * 格式化日期
+ * @param  string $created 时间字符串
+ * @return string          格式化后的时间字符串
  */
-function convert_date ($created) {
-  // => '2017-07-01 08:08:00'
-  // 如果配置文件没有配置时区
-  // date_default_timezone_set('PRC');
+function format_date ($created) {
+  // 设置默认时区！！！ PRC 指的是中华人民共和国
+  date_default_timezone_set('PRC');
+
+  // 转换为时间戳
   $timestamp = strtotime($created);
-  return date('Y年m月d日<b\r>H:i:s', $timestamp);
+
+  // 格式化并返回 由于 r 是特殊字符，所以需要 \r 转义一下
+  return date('Y年m月d日 <b\r> H:i:s', $timestamp);
 }
 
 ?>
@@ -138,43 +140,42 @@ function convert_date ($created) {
   <script>NProgress.start()</script>
 
   <div class="main">
-    <?php include 'inc/navbar.php'; ?>
-
+    <nav class="navbar">
+      <button class="btn btn-default navbar-btn fa fa-bars"></button>
+      <ul class="nav navbar-nav navbar-right">
+        <li><a href="profile.php"><i class="fa fa-user"></i>个人中心</a></li>
+        <li><a href="logout.php"><i class="fa fa-sign-out"></i>退出</a></li>
+      </ul>
+    </nav>
     <div class="container-fluid">
       <div class="page-title">
         <h1>所有文章</h1>
-        <a href="post-add.html" class="btn btn-primary btn-xs">写文章</a>
+        <a href="post-add.php" class="btn btn-primary btn-xs">写文章</a>
       </div>
       <!-- 有错误信息时展示 -->
       <!-- <div class="alert alert-danger">
-        <strong>错误！</strong>发生XXX错误
+        <strong>错误！</strong> 发生XXX错误
       </div> -->
       <div class="page-action">
         <!-- show when multiple checked -->
-        <a class="btn btn-danger btn-sm" href="javascript:;" style="display: none">批量删除</a>
-        <form class="form-inline" action="<?php echo $_SERVER['PHP_SELF']; ?>">
-          <select name="category" class="form-control input-sm">
+        <a class="btn btn-danger btn-sm btn-delete" href="/admin/post-delete.php" style="display: none">批量删除</a>
+        <form class="form-inline" action="/admin/posts.php">
+          <select name="c" class="form-control input-sm">
             <option value="all">所有分类</option>
-            <?php foreach ($categories as $item): ?>
-            <option value="<?php echo $item['id']; ?>"<?php echo isset($_GET['category']) && $_GET['category'] == $item['id'] ? ' selected' : '' ?>>
-              <?php echo $item['name']; ?>
-            </option>
-            <?php endforeach ?>
+            <?php foreach ($categories as $item) { ?>
+            <option value="<?php echo $item['id']; ?>"<?php echo isset($_GET['c']) && $_GET['c'] == $item['id'] ? ' selected' : ''; ?>><?php echo $item['name']; ?></option>
+            <?php } ?>
           </select>
-          <select name="status" class="form-control input-sm">
+          <select name="s" class="form-control input-sm">
             <option value="all">所有状态</option>
-            <option value="drafted"<?php echo isset($_GET['status']) && $_GET['status'] == 'drafted' ? ' selected' : '' ?>>草稿</option>
-            <option value="published"<?php echo isset($_GET['status']) && $_GET['status'] == 'published' ? ' selected' : '' ?>>已发布</option>
-            <option value="trashed"<?php echo isset($_GET['status']) && $_GET['status'] == 'trashed' ? ' selected' : '' ?>>回收站</option>
+            <option value="drafted"<?php echo isset($_GET['s']) && $_GET['s'] == 'drafted' ? ' selected' : ''; ?>>草稿</option>
+            <option value="published"<?php echo isset($_GET['s']) && $_GET['s'] == 'published' ? ' selected' : ''; ?>>已发布</option>
+            <option value="trashed"<?php echo isset($_GET['s']) && $_GET['s'] == 'trashed' ? ' selected' : ''; ?>>回收站</option>
           </select>
           <button class="btn btn-default btn-sm">筛选</button>
         </form>
         <ul class="pagination pagination-sm pull-right">
-          <li><a href="#">上一页</a></li>
-          <?php for ($i = $begin; $i <= $end; $i++): ?>
-          <li<?php echo $i === $page ? ' class="active"' : '' ?>><a href="?page=<?php echo $i . $search; ?>"><?php echo $i; ?></a></li>
-          <?php endfor ?>
-          <li><a href="#">下一页</a></li>
+          <?php xiu_pagination($page, $total_pages, '?p=%d' . $query); ?>
         </ul>
       </div>
       <table class="table table-striped table-bordered table-hover">
@@ -190,23 +191,20 @@ function convert_date ($created) {
           </tr>
         </thead>
         <tbody>
-          <?php foreach ($posts as $item): ?>
-          <tr>
+          <?php foreach ($posts as $item) { ?>
+          <tr data-id="<?php echo $item['id']; ?>">
             <td class="text-center"><input type="checkbox"></td>
             <td><?php echo $item['title']; ?></td>
-            <!-- <td><?php // echo get_user($item['user_id']); ?></td>
-            <td><?php // echo get_category($item['category_id']); ?></td> -->
-            <td><?php echo $item['user_name']; ?></td>
+            <td><?php echo $item['author_name']; ?></td>
             <td><?php echo $item['category_name']; ?></td>
-            <td class="text-center"><?php echo convert_date($item['created']); ?></td>
-            <!-- 一旦当输出的判断或者转换逻辑过于复杂，不建议直接写在混编位置 -->
+            <td class="text-center"><?php echo format_date($item['created']); ?></td>
             <td class="text-center"><?php echo convert_status($item['status']); ?></td>
             <td class="text-center">
               <a href="javascript:;" class="btn btn-default btn-xs">编辑</a>
               <a href="/admin/post-delete.php?id=<?php echo $item['id']; ?>" class="btn btn-danger btn-xs">删除</a>
             </td>
           </tr>
-          <?php endforeach ?>
+          <?php } ?>
         </tbody>
       </table>
     </div>
@@ -217,6 +215,56 @@ function convert_date ($created) {
 
   <script src="/static/assets/vendors/jquery/jquery.js"></script>
   <script src="/static/assets/vendors/bootstrap/js/bootstrap.js"></script>
+  <script>
+    $(function () {
+      // 获取所需操作的界面元素
+      var $btnDelete = $('.btn-delete')
+      var $thCheckbox = $('th > input[type=checkbox]')
+      var $tdCheckbox = $('td > input[type=checkbox]')
+
+      // 用于记录界面上选中行的数据 ID
+      var checked = []
+
+      /**
+       * 表格中的复选框选中发生改变时控制删除按钮的链接参数和显示状态
+       */
+      $tdCheckbox.on('change', function () {
+        var $this = $(this)
+
+        // 为了可以在这里获取到当前行对应的数据 ID
+        // 在服务端渲染 HTML 时，给每一个 tr 添加 data-id 属性，记录数据 ID
+        // 这里通过 data-id 属性获取到对应的数据 ID
+        var id = parseInt($this.parent().parent().data('id'))
+
+        // ID 如果不合理就忽略
+        if (!id) return
+
+        if ($this.prop('checked')) {
+          // 选中就追加到数组中
+          checked.push(id)
+        } else {
+          // 未选中就从数组中移除
+          checked.splice(checked.indexOf(id), 1)
+        }
+
+        // 有选中就显示操作按钮，没选中就隐藏
+        checked.length ? $btnDelete.fadeIn() : $btnDelete.fadeOut()
+
+        // 批量删除按钮链接参数
+        // search 是 DOM 标准属性，用于设置或获取到的是 a 链接的查询字符串
+        $btnDelete.prop('search', '?id=' + checked.join(','))
+      })
+
+      /**
+       * 全选 / 全不选
+       */
+      $thCheckbox.on('change', function () {
+        var checked = $(this).prop('checked')
+        // 设置每一行的选中状态并触发 上面 👆 的事件
+        $tdCheckbox.prop('checked', checked).trigger('change')
+      })
+    })
+  </script>
   <script>NProgress.done()</script>
 </body>
 </html>
